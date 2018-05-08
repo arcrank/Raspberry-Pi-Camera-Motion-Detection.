@@ -4,6 +4,7 @@ import datetime
 import picamera
 import os
 import telebot
+import math
 
 camera = picamera.PiCamera()
 GPIO.setmode(GPIO.BCM)
