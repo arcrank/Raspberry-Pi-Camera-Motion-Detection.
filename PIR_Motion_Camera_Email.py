@@ -3,11 +3,7 @@ import time
 import datetime
 import picamera
 import os
-import smtplib
-from email import encoders
-from email.mime.base import MIMEBase
-from email.mime.multipart import MIMEMultipart
-
+import telebot
 
 camera = picamera.PiCamera()
 GPIO.setmode(GPIO.BCM)
@@ -20,52 +16,20 @@ ts = time.time()
 st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
 '''
 
+CHAT_ID = 1234567 # target chat_id AKA your user id, ideally
+BOT_TOKEN = 'your bot token here'
 
+bot = telebot.TeleBot(BOT_TOKEN)
 
 COMMASPACE = ', '
 
-def Send_Email(image):
-    sender = '###YOUREMAIL###'
-    gmail_password = '###YOURPASSWORD###'
-    recipients = ['##YOURRECIPENTEMAIL###']
-
-    # Create the enclosing (outer) message
-    outer = MIMEMultipart()
-    outer['Subject'] = 'Attachment Test'
-    outer['To'] = COMMASPACE.join(recipients)
-    outer['From'] = sender
-    outer.preamble = 'You will not see this in a MIME-aware mail reader.\n'
-
-    # List of attachments
-    attachments = [image]
-
-    # Add the attachments to the message
-    for file in attachments:
-        try:
-            with open(file, 'rb') as fp:
-                msg = MIMEBase('application', "octet-stream")
-                msg.set_payload(fp.read())
-            encoders.encode_base64(msg)
-            msg.add_header('Content-Disposition', 'attachment', filename=os.path.basename(file))
-            outer.attach(msg)
-        except:
-            print("Unable to open one of the attachments. Error: ", sys.exc_info()[0])
-            raise
-
-    composed = outer.as_string()
-
-    # Send the email
+def send_message(image):
     try:
-        with smtplib.SMTP('smtp.gmail.com', 587) as s:
-            s.ehlo()
-            s.starttls()
-            s.ehlo()
-            s.login(sender, gmail_password)
-            s.sendmail(sender, recipients, composed)
-            s.close()
-        print("Email sent!")
+        with open(image, 'rb') as f:
+            bot.send_photo(CHAT_ID, f)
+        print("Message sent!")
     except:
-        print("Unable to send the email. Error: ", sys.exc_info()[0])
+        print("Unable to send the message. Error: ", sys.exc_info()[0])
         raise
 
 
@@ -86,7 +50,7 @@ try:
             ##Adds timestamp to image
             camera.capture('image_Time_{}.jpg'.format(st))
             image = ('image_Time_{}.jpg'.format(st))
-            Send_Email(image)
+            send_message(image)
             time.sleep(2)
             GPIO.output(24, False)
             time.sleep(5) #to avoid multiple detection
